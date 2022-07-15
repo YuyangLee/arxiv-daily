@@ -2,7 +2,7 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Arxiv Manager
 Date: 2022-07-15 16:46:22
-LastEditTime: 2022-07-16 01:55:42
+LastEditTime: 2022-07-16 01:58:16
 Author: Aiden Li
 '''
 
@@ -156,7 +156,7 @@ class ArxivDownloader:
         return os.path.join(path, filename)
     
     def build_zip_file_pair(self, sub):
-        return [ os.path.join(self.pdfs_basedir, sub.cat, sub.subcat, f"{self.timetag}"), self.timetag_flat ]
+        return [ os.path.join(self.pdfs_basedir, sub.cat, sub.subcat, f"{self.timetag}"), f"{ self.timetag_flat }_{ sub.cat }_{ sub.subcat }" ]
 
     def build_paper_pdf_path(self, sub: Subscription, title: str, mkdir=True):
         path = os.path.join(
