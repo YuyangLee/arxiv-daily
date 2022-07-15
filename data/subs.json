@@ -4,14 +4,16 @@
             "cs",
             "CV",
             [
+                "Affordance",
+                "Segmentation",
                 "Human",
                 "Object",
                 "HOI",
                 "Human Object",
                 "Interaction",
                 "Object Detection",
-                "3D Reconstruction",
-                "3D Completion",
+                "Reconstruction",
+                "Completion",
                 "Orientation",
                 "Rotation",
                 "Point Cloud",
@@ -22,9 +24,9 @@
                 "NeRF",
                 "Implicit Template",
                 "Implecit Prior",
-                "Autoencoder",
                 "VAE",
-                "Gym"
+                "Gym",
+                "Autoencoder"
             ]
         ],
         [

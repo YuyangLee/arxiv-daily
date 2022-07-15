@@ -2,7 +2,7 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Download daily Arxiv papers
 Date: 2022-07-15 16:41:41
-LastEditTime: 2022-07-16 00:37:54
+LastEditTime: 2022-07-16 01:09:28
 Author: Aiden Li
 '''
 
@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import sched
+import shutil
 from sched import scheduler
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -26,7 +27,7 @@ def get_args():
     parser.add_argument("--feeds_dir", type=str, default="feeds")
     parser.add_argument("--odf_dir", type=str, default="pdf")
     parser.add_argument("--notion", type=bool, default=True)
-    parser.add_argument("--gdrive", type=bool, default=False)
+    parser.add_argument("--gdrive", type=bool, default=True)
     
     return parser.parse_args()
 
@@ -40,7 +41,7 @@ def run(sub_path, notion=False, gdrive=False):
         for [cat, subcat, keywords] in subscriptions
     ]
     downloader = ArxivDownloader(subs)
-    notion_entries = downloader.fetch_papers(get_notion_entries=notion)
+    notion_entries, zip_pairs = downloader.fetch_papers(get_notion_entries=notion, get_zip_pairs=True)
     
     if notion:
         notion_creds = json.load(open(args.notion_cred_path, 'r'))
@@ -48,7 +49,14 @@ def run(sub_path, notion=False, gdrive=False):
         for entry in notion_entries:
             logger.post_paper(entry)
     if gdrive:
-        pass
+        os.makedirs("dispatch", exist_ok=True)
+        paths = []
+        for [folder, file_name] in zip_pairs:
+            archive_path = os.path.join("dispatch", file_name)
+            paths.append(archive_path)
+            shutil.make_archive(archive_path, 'zip', folder)
+        
+        # TODO: Send to Google Drive
     
 if __name__ == '__main__':
     args = get_args()

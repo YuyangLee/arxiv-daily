@@ -2,7 +2,7 @@
 Author: Aiden Li
 Date: 2022-07-15 23:39:24
 LastEditors: Aiden Li (i@aidenli.net)
-LastEditTime: 2022-07-16 00:43:41
+LastEditTime: 2022-07-16 00:51:22
 Description: Log to Notion
 '''
 import requests
@@ -58,6 +58,10 @@ class NotionLogger:
                         },
                         "plain_text": entry['cat']
                     }]
+                },
+                "Downloaded": {
+                    "type": "checkbox",
+                    "checkbox": entry['succ']
                 },
                 "Check": {
                     "type": "checkbox",

@@ -2,12 +2,13 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Arxiv Manager
 Date: 2022-07-15 16:46:22
-LastEditTime: 2022-07-16 00:35:22
+LastEditTime: 2022-07-16 01:04:40
 Author: Aiden Li
 '''
 
 import json
 import os
+from re import L
 import sqlite3
 from datetime import datetime
 import threading
@@ -103,9 +104,13 @@ class ArxivDownloader:
         self.subs = subs
         self.feeds_basedir = feeds_basedir
         self.pdfs_basedir = pdfs_basedir
-        self.timetag = datetime.now().strftime("%Y/%m-%d")
         self.db = connect_db(db_name)
+        self.update_timetag()
 
+    def update_timetag(self):
+        self.timetag = datetime.now().strftime("%Y/%m-%d")
+        self.timetag_flat = datetime.now().strftime("%Y-%m-%d")
+        
     def db_check_article(self, id):
         # TODO: Anti-Injection
         # TODO: Beter database IO
@@ -149,6 +154,9 @@ class ArxivDownloader:
         if mkdir:
             os.makedirs(path, exist_ok=True)
         return os.path.join(path, filename)
+    
+    def build_zip_file_pair(self, sub):
+        return [ os.path.join(self.pdfs_basedir, sub.cat, sub.subcat, f"{self.timetag}"), self.timetag_flat ]
 
     def build_paper_pdf_path(self, sub: Subscription, title: str, mkdir=True):
         path = os.path.join(
@@ -166,11 +174,14 @@ class ArxivDownloader:
         title = title.replace('<', '-').replace('>', '-')
         return os.path.join(path, f"{title}.pdf")
 
-    def fetch_papers(self, get_notion_entries=False):
+    def fetch_papers(self, get_notion_entries=False, get_zip_pairs=False):
         self.timetag = datetime.now().strftime("%Y/%m-%d")
         
         if get_notion_entries:
             notion_entries = []
+            
+        if get_zip_pairs:
+            zip_pairs = []
             
         for sub in self.subs:
             tqdm.write(
@@ -192,31 +203,36 @@ class ArxivDownloader:
                     targets.append(entry)
                     link = self.build_paper_pdf_url(arxiv_id)
                     try:
+                        if get_notion_entries:
+                            notion_entries.append(self.parse_notion_entry(
+                                sub, entry['title'], arxiv_id, entry['summary'][3:-4]
+                            ))
+                        
                         pdf_path = self.build_paper_pdf_path(sub, entry['title'])
                         download_file(link, pdf_path, 16)
                         self.db_add_article(arxiv_id, entry['title'])
                         print(f"Downloaded arxiv {arxiv_id} Title: {entry['title']}")
-                        notion_entries.append(self.parse_notion_entry(
-                            sub, entry['title'], arxiv_id, entry['summary'][3:-4]
-                        ))
                         succ.append(True)
                     except:
                         succ.append(False)
+                        if get_notion_entries:
+                            notion_entries[-1]['succ'] = False
 
+            if get_zip_pairs:
+                zip_pairs.append(self.build_zip_file_pair(sub))
+                
             json.dump({
                 "targets": targets,
                 "succ": succ
             }, open(self.feeds_local_path(sub, "target.json"), "w"))
             
-            if get_notion_entries:
-                return notion_entries
+            return notion_entries, zip_pairs
             
-            # TODO: Log to Notion
-
     def parse_notion_entry(self, sub, title, arxiv_id, abstract):
         return {
             'arxiv_id': arxiv_id,
             'title': title,
             'cat': f"{sub.cat}.{sub.subcat}",
-            'abstract': abstract
+            'abstract': abstract,
+            'succ': True
         }
