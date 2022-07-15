@@ -2,7 +2,7 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Download daily Arxiv papers
 Date: 2022-07-15 16:41:41
-LastEditTime: 2022-07-15 23:16:02
+LastEditTime: 2022-07-15 23:22:01
 Author: Aiden Li
 '''
 
@@ -13,6 +13,12 @@ import sched
 from utils import Subscription, Arxiv
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+import argparse
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument("--sub_path", type=str, default="data/subs.json")
 
 def run(sub_path):
     subscriptions = json.load(open(sub_path, 'r'))['subs']
