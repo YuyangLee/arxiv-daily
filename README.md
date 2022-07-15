@@ -10,7 +10,7 @@ Typically you just install the requirements specified in `requirements.txt` by:
 pip install -r requirements.txt
 ```
 
-Then just run `python run.py`.
+Then just run `python run.py` with your arguments.
 
 ### Subscriptions
 
@@ -48,9 +48,9 @@ You can modify the paper fetching schedule by modifying `cron` rules of `apsched
 
 PENDING...
 
-### Send to Google Drive
+### Send to Drives
 
-PENDING...
+Please use [RCLONE](https://rclone.org/) to mount your cloud storage on your machine. Then by adding argument `--dispatch true` and specifying `--dispatch_dir YOUR_DIRECTORY` the archived package will be sent to the directory after archiving.
 
 # Credits
 
