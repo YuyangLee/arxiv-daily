@@ -2,7 +2,7 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Arxiv Manager
 Date: 2022-07-15 16:46:22
-LastEditTime: 2022-07-15 23:19:51
+LastEditTime: 2022-07-16 00:35:22
 Author: Aiden Li
 '''
 
@@ -14,7 +14,7 @@ import threading
 
 import feedparser
 from tqdm import tqdm
-import utils
+import utils.utils as utils
 import requests
 
 
@@ -25,6 +25,55 @@ def connect_db(db_name):
     )
     db.commit()
     return db
+
+# Thanks to https://github.com/Tachyu/Arxiv-download
+def Handler(start, end, url, filename):
+    # specify the starting and ending of the file
+    headers = {'Range': 'bytes=%d-%d' % (start, end)}
+    # request the specified part and get into variable
+    r = requests.get(url, headers=headers, stream=True)
+    # open the file and write the content of the html page
+    # into file.
+    with open(filename, "r+b") as fp:
+        fp.seek(start)
+        var = fp.tell()
+        fp.write(r.content)
+
+def download_file(url_of_file, name, number_of_threads):
+    r = requests.head(url_of_file)
+    if name:
+        file_name = name
+    else:
+        file_name = url_of_file.split('/')[-1]
+    try:
+        file_size = int(r.headers['content-length'])
+    except:
+        print("Invalid URL")
+        return
+
+    part = int(file_size) / number_of_threads
+    fp = open(file_name, "wb")
+    # fp.write('\0' * file_size)
+    fp.close()
+    for i in range(number_of_threads):
+        start = int(part * i)
+        end = int(start + part)
+        # create a Thread with start and end locations
+        t = threading.Thread(target=Handler,
+                             kwargs={
+                                 'start': start,
+                                 'end': end,
+                                 'url': url_of_file,
+                                 'filename': file_name
+                             })
+        t.setDaemon(True)
+        t.start()
+
+    main_thread = threading.current_thread()
+    for t in threading.enumerate():
+        if t is main_thread:
+            continue
+        t.join()
 
 
 class Subscription:
@@ -44,7 +93,7 @@ class Subscription:
         ]
 
 
-class Arxiv:
+class ArxivDownloader:
 
     def __init__(self,
                  subs,
@@ -117,13 +166,17 @@ class Arxiv:
         title = title.replace('<', '-').replace('>', '-')
         return os.path.join(path, f"{title}.pdf")
 
-    def fetch_papers(self):
+    def fetch_papers(self, get_notion_entries=False):
         self.timetag = datetime.now().strftime("%Y/%m-%d")
+        
+        if get_notion_entries:
+            notion_entries = []
+            
         for sub in self.subs:
             tqdm.write(
                 f"Loading paper list from {sub.cat}:{sub.subcat} with keywords: {sub.keywords}"
             )
-            feeds = feedparser.parse(Arxiv.build_rss_url(sub))
+            feeds = feedparser.parse(ArxivDownloader.build_rss_url(sub))
             json.dump(feeds, open(self.feeds_local_path(sub, "raw.json"), "w"))
 
             entries = feeds['entries']
@@ -132,7 +185,7 @@ class Arxiv:
             for entry in entries:
                 self.keywords = sub.keywords
                 if self.entry_filter(entry):
-                    arxiv_id = Arxiv.parse_id(entry['id'])
+                    arxiv_id = ArxivDownloader.parse_id(entry['id'])
                     if self.db_check_article(arxiv_id):
                         continue
 
@@ -143,6 +196,9 @@ class Arxiv:
                         download_file(link, pdf_path, 16)
                         self.db_add_article(arxiv_id, entry['title'])
                         print(f"Downloaded arxiv {arxiv_id} Title: {entry['title']}")
+                        notion_entries.append(self.parse_notion_entry(
+                            sub, entry['title'], arxiv_id, entry['summary'][3:-4]
+                        ))
                         succ.append(True)
                     except:
                         succ.append(False)
@@ -152,55 +208,15 @@ class Arxiv:
                 "succ": succ
             }, open(self.feeds_local_path(sub, "target.json"), "w"))
             
+            if get_notion_entries:
+                return notion_entries
+            
             # TODO: Log to Notion
 
-
-# Thanks to https://github.com/Tachyu/Arxiv-download
-def Handler(start, end, url, filename):
-    # specify the starting and ending of the file
-    headers = {'Range': 'bytes=%d-%d' % (start, end)}
-    # request the specified part and get into variable
-    r = requests.get(url, headers=headers, stream=True)
-    # open the file and write the content of the html page
-    # into file.
-    with open(filename, "r+b") as fp:
-        fp.seek(start)
-        var = fp.tell()
-        fp.write(r.content)
-
-
-def download_file(url_of_file, name, number_of_threads):
-    r = requests.head(url_of_file)
-    if name:
-        file_name = name
-    else:
-        file_name = url_of_file.split('/')[-1]
-    try:
-        file_size = int(r.headers['content-length'])
-    except:
-        print("Invalid URL")
-        return
-
-    part = int(file_size) / number_of_threads
-    fp = open(file_name, "wb")
-    # fp.write('\0' * file_size)
-    fp.close()
-    for i in range(number_of_threads):
-        start = int(part * i)
-        end = int(start + part)
-        # create a Thread with start and end locations
-        t = threading.Thread(target=Handler,
-                             kwargs={
-                                 'start': start,
-                                 'end': end,
-                                 'url': url_of_file,
-                                 'filename': file_name
-                             })
-        t.setDaemon(True)
-        t.start()
-
-    main_thread = threading.current_thread()
-    for t in threading.enumerate():
-        if t is main_thread:
-            continue
-        t.join()
+    def parse_notion_entry(self, sub, title, arxiv_id, abstract):
+        return {
+            'arxiv_id': arxiv_id,
+            'title': title,
+            'cat': f"{sub.cat}.{sub.subcat}",
+            'abstract': abstract
+        }
