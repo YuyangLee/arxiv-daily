@@ -1,0 +1,43 @@
+{
+    "subs": [
+        [
+            "cs",
+            "CV",
+            [
+                "Human",
+                "Object",
+                "HOI",
+                "Human Object",
+                "Interaction",
+                "Object Detection",
+                "3D Reconstruction",
+                "3D Completion",
+                "Orientation",
+                "Rotation",
+                "Point Cloud",
+                "Grasp",
+                "Manipulation",
+                "Pose Estimation",
+                "Neural Radiance Field",
+                "NeRF",
+                "Implicit Template",
+                "Implecit Prior",
+                "Autoencoder",
+                "VAE",
+                "Gym"
+            ]
+        ],
+        [
+            "cs",
+            "RO",
+            [
+                "Object",
+                "Grasp",
+                "Pose",
+                "Reorientation",
+                "Manipulation",
+                "Gym"
+            ]
+        ]
+    ]
+}

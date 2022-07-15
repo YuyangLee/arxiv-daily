@@ -2,27 +2,35 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Download daily Arxiv papers
 Date: 2022-07-15 16:41:41
-LastEditTime: 2022-07-15 16:49:57
+LastEditTime: 2022-07-15 23:16:02
 Author: Aiden Li
 '''
 
-from tqdm import tqdm, trange
+import json
+from sched import scheduler
+import sched
 
-from arxiv import Subscription, Arxiv
+from utils import Subscription, Arxiv
+from apscheduler.schedulers.blocking import BlockingScheduler
 
-subscriptions = [
-    [
-        'cs', 'CV',
-        [ "Human", "Object", "Point Cloud", "Grasp", "Pose", "NeRF" ]
-    ],
-    [
-        'cs', 'RO',
-        [ "Object", "Grasp", "Pose" ]
-    ],
-]
 
-subs = [
-    Subscription(cat, subcat, keywords) for idx, [cat, subcat, keywords] in tqdm(enumerate(subscriptions)) 
-]
+def run(sub_path):
+    subscriptions = json.load(open(sub_path, 'r'))['subs']
+    subs = [
+        Subscription(cat, subcat, keywords)
+        for [cat, subcat, keywords] in subscriptions
+    ]
+    server = Arxiv(subs)
+    server.fetch_papers()
+
+if __name__ == '__main__':
+    sub_path = "data/subs.json"
     
+    # Test run
+    # run(sub_path)
     
+    # Runs at 6 AM every day
+    scheduler = BlockingScheduler()
+    scheduler.add_job(run, 'cron', hour=6, args=[sub_path])
+    
+    scheduler.start()
