@@ -52,3 +52,8 @@ PENDING...
 
 PENDING...
 
+# Credits
+
+This small project was made possible by these repos:
+
+- [Tachyu/Arxiv-download](https://github.com/Tachyu/Arxiv-download)
