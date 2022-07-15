@@ -2,7 +2,7 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Arxiv Manager
 Date: 2022-07-15 16:46:22
-LastEditTime: 2022-07-16 01:04:40
+LastEditTime: 2022-07-16 01:55:42
 Author: Aiden Li
 '''
 
@@ -226,7 +226,7 @@ class ArxivDownloader:
                 "succ": succ
             }, open(self.feeds_local_path(sub, "target.json"), "w"))
             
-            return notion_entries, zip_pairs
+        return notion_entries, zip_pairs
             
     def parse_notion_entry(self, sub, title, arxiv_id, abstract):
         return {
