@@ -1,24 +1,46 @@
 {
+    "exclude": [
+        "medic",
+        "tumor",
+        "cancer",
+        "vessel",
+        "organ",
+        "",
+        "cancer",
+        "cancer",
+        "cancer",
+        "cancer",
+        "cancer",
+        "cancer",
+        "cancer"
+    ],
     "subs": [
         [
             "cs",
             "CV",
             [
-                "Affordance",
-                "Segmentation",
+		"SO(3)",
+		"SE(3)",
+		"Imitation",
+		"Reinforcement",
+		"Affordance",
+		"Alignment",
+		"Invaria",
+		"Equivaria",
+                "Segmentat",
                 "Human",
                 "Object",
                 "HOI",
                 "Human Object",
                 "Interaction",
                 "Object Detection",
-                "Reconstruction",
+                "Recon",
                 "Completion",
-                "Orientation",
-                "Rotation",
+                "Orient",
+                "Rotat",
                 "Point Cloud",
                 "Grasp",
-                "Manipulation",
+                "Manip",
                 "Pose Estimation",
                 "Neural Radiance Field",
                 "NeRF",
@@ -26,7 +48,8 @@
                 "Implecit Prior",
                 "VAE",
                 "Gym",
-                "Autoencoder"
+                "Autoencoder",
+		"Diffus"
             ]
         ],
         [

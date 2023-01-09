@@ -2,7 +2,7 @@
 LastEditors: Aiden Li (i@aidenli.net)
 Description: Arxiv Manager
 Date: 2022-07-15 16:46:22
-LastEditTime: 2022-07-16 01:58:16
+LastEditTime: 2023-01-09 16:26:16
 Author: Aiden Li
 '''
 
@@ -17,6 +17,13 @@ import feedparser
 from tqdm import tqdm
 import utils.utils as utils
 import requests
+
+import yaml
+
+def get_yaml_data(filepath):
+    with open(filepath, 'r') as f:
+        data = yaml.load(f, Loader=yaml.FullLoader)
+    return data
 
 
 def connect_db(db_name):
@@ -174,14 +181,15 @@ class ArxivDownloader:
         title = title.replace('<', '-').replace('>', '-')
         return os.path.join(path, f"{title}.pdf")
 
-    def fetch_papers(self, get_notion_entries=False, get_zip_pairs=False):
+    def fetch_papers(self, get_notion_entries=False, get_zip_pairs=False, max_amount=None):
         self.timetag = datetime.now().strftime("%Y/%m-%d")
         
-        if get_notion_entries:
-            notion_entries = []
+        if max_amount is None:
+            max_amount = -1
+        
+        notion_entries = []
             
-        if get_zip_pairs:
-            zip_pairs = []
+        zip_pairs = []
             
         for sub in self.subs:
             tqdm.write(
@@ -196,6 +204,8 @@ class ArxivDownloader:
             for entry in entries:
                 self.keywords = sub.keywords
                 if self.entry_filter(entry):
+                    max_amount -= 1
+                    
                     arxiv_id = ArxivDownloader.parse_id(entry['id'])
                     if self.db_check_article(arxiv_id):
                         continue
@@ -215,8 +225,8 @@ class ArxivDownloader:
                         succ.append(True)
                     except:
                         succ.append(False)
-                        if get_notion_entries:
-                            notion_entries[-1]['succ'] = False
+                if max_amount == 0:
+                    break
 
             if get_zip_pairs:
                 zip_pairs.append(self.build_zip_file_pair(sub))
@@ -234,5 +244,6 @@ class ArxivDownloader:
             'title': title,
             'cat': f"{sub.cat}.{sub.subcat}",
             'abstract': abstract,
+            'datetime': datetime.now().strftime("%Y-%m-%d"),
             'succ': True
         }

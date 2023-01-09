@@ -1,4 +1,6 @@
-APScheduler==3.9.1
-feedparser==6.0.10
-requests==2.27.1
-tqdm==4.64.0
+apscheduler
+feedparser
+requests
+tqdm
+boto3
+awscli
