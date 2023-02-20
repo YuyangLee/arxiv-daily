@@ -181,14 +181,12 @@ class ArxivDownloader:
         title = title.replace('<', '-').replace('>', '-')
         return os.path.join(path, f"{title}.pdf")
 
-    def fetch_papers(self, get_notion_entries=False, get_zip_pairs=False, max_amount=None):
+    def fetch_papers(self, get_zip_pairs=False, max_amount=None):
         self.timetag = datetime.now().strftime("%Y/%m-%d")
         
         if max_amount is None:
             max_amount = -1
         
-        notion_entries = []
-            
         zip_pairs = []
             
         for sub in self.subs:
@@ -213,11 +211,6 @@ class ArxivDownloader:
                     targets.append(entry)
                     link = self.build_paper_pdf_url(arxiv_id)
                     try:
-                        if get_notion_entries:
-                            notion_entries.append(self.parse_notion_entry(
-                                sub, entry['title'], arxiv_id, entry['summary'][3:-4]
-                            ))
-                        
                         pdf_path = self.build_paper_pdf_path(sub, entry['title'])
                         download_file(link, pdf_path, 16)
                         self.db_add_article(arxiv_id, entry['title'])
@@ -236,7 +229,7 @@ class ArxivDownloader:
                 "succ": succ
             }, open(self.feeds_local_path(sub, "target.json"), "w"))
             
-        return notion_entries, zip_pairs
+        return zip_pairs
             
     def parse_notion_entry(self, sub, title, arxiv_id, abstract):
         return {

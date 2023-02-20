@@ -26,7 +26,6 @@ def get_args():
     
     parser.add_argument("--max_amount", type=str, default=None)
     parser.add_argument("--sub_path", type=str, default="data/subs.json")
-    parser.add_argument("--notion_cred_path", type=str, default="credentials/notion.json")
     parser.add_argument("--feeds_dir", type=str, default="feeds")
     parser.add_argument("--odf_dir", type=str, default="pdf")
     parser.add_argument("--logdir", type=str, default="logs")
@@ -54,7 +53,7 @@ def run(args):
         for [cat, subcat, keywords] in subscriptions
     ]
     downloader = ArxivDownloader(subs)
-    notion_paper_entries, zip_pairs = downloader.fetch_papers(get_notion_entries=args.notion, get_zip_pairs=True, max_amount=args.max_amount)
+    zip_pairs = downloader.fetch_papers(get_zip_pairs=True, max_amount=args.max_amount)
     
     if args.s3:
         paths = []
@@ -62,36 +61,20 @@ def run(args):
         os.makedirs("dispatch", exist_ok=True)
         for [folder, filename_noext] in zip_pairs:
             archive_path = os.path.join("dispatch", filename_noext)
+            if not os.path.isdir(folder):
+                continue
             shutil.make_archive(archive_path, 'zip', folder)
-            paths.append(f"{archive_path}.zip")
+            archive_path = f"{archive_path}.zip"
+            paths.append(archive_path)
+            print(f"Made archive {archive_path}")
         
         # If not specified (passing None), boto3 will look for credentials in ~/.aws/credentials
         s3_cred = cred['s3']
+        print("Sending to S3")
         s3_uploader = S3Uploader(args.s3_bucket, args.s3_remote_dir, s3_cred['aws_access_key_id'], s3_cred['aws_secret_access_key'], args.s3_baseurl, args.s3_endpoint)
         for i, archive_path in enumerate(paths):
             object_url = s3_uploader.upload(archive_path)
-            if args.notion:
-                notion_archive_entries.append({
-                    "filename": os.path.basename(archive_path),
-                    "date": datetime.now().strftime("%Y-%m-%d"),
-                    "size": round(os.path.getsize(archive_path) / (2**20), 2),
-                    "cat": f"{subscriptions[i][0]}.{subscriptions[i][1]}"
-                })
             logging.info(f"Uploaded {archive_path} to S3: {object_url}")
-        
-    # TODO: Fix bugs
-    # if args.notion:
-    #     notion_cred = cred['notion']
-    #     if 'archive_dbid' in notion_cred:
-    #         notion_logger = NotionLogger(notion_cred['token'], notion_cred['paper_list_dbid'], notion_cred['archive_dbid'])
-    #     else:
-    #         notion_logger = NotionLogger(notion_cred['token'], notion_cred['paper_list_dbid'])
-            
-    #     for entry in notion_paper_entries:
-    #         notion_logger.post_paper(entry)
-    #     if args.s3:
-    #         for entry in notion_archive_entries:
-    #             notion_logger.post_archive(entry)
             
 if __name__ == '__main__':
     args = get_args()
@@ -106,4 +89,4 @@ if __name__ == '__main__':
         args=[args]
     )
     
-    # scheduler.start()
+    scheduler.start()
